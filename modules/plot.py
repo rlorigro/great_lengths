@@ -4,8 +4,7 @@ import sys
 import os
 
 
-def plot_ngx(lengths, output_dir):
-    total_length = sum(lengths)
+def plot_ngx(length_frequencies, total_length, output_dir):
 
     figure = pyplot.figure()
     axes = pyplot.axes()
@@ -18,20 +17,21 @@ def plot_ngx(lengths, output_dir):
     x_coords = list()
     y_coords = list()
 
-    for length in lengths:
-        y = length
-        width = float(length) / float(total_length)
-        x2 = x1 + width
+    for length,frequency in length_frequencies:
+        for i in range(frequency):
+            y = length
+            width = float(length) / float(total_length)
+            x2 = x1 + width
 
-        if y_prev is not None:
-            x_coords.extend([x1, x1])
-            y_coords.extend([y_prev, y])
+            if y_prev is not None:
+                x_coords.extend([x1, x1])
+                y_coords.extend([y_prev, y])
 
-        x_coords.extend([x1, x2])
-        y_coords.extend([y, y])
+            x_coords.extend([x1, x2])
+            y_coords.extend([y, y])
 
-        x1 = x2
-        y_prev = y
+            x1 = x2
+            y_prev = y
 
     if y_coords[-1] != 0:
         y_coords.append(0)
@@ -46,15 +46,17 @@ def plot_ngx(lengths, output_dir):
     axes.set_xlim([0, 1])
 
     axes.set_title("NGx")
-    axes.set_xlabel("Cumulative Coverage")
+    axes.set_xlabel("Cumulative coverage (normalized to 1)")
+    axes.set_ylabel("Length")
 
-    print("SAVING FIGURE: %s" % path)
-    figure.savefig(path + ".png", dpi=300)
-    figure.savefig(path + ".pdf", dpi=300)
+    path = os.path.join(output_dir, "NGx.svg")
+    sys.stderr.write("SAVING FIGURE: %s\n" % path)
+    figure.savefig(path, dpi=200)
 
     pyplot.close()
 
-def plot_iterative_histogram(iterative_histogram, path=None):
+
+def plot_iterative_histogram(iterative_histogram, output_dir):
     figure = pyplot.figure()
     axes = pyplot.axes()
 
@@ -67,7 +69,8 @@ def plot_iterative_histogram(iterative_histogram, path=None):
     axes.set_xlabel("Read length (bp)")
     axes.set_ylabel("Frequency")
 
-    if path is not None:
-        figure.savefig(path, dpi=200)
+    path = os.path.join(output_dir, "histogram.svg")
+    sys.stderr.write("SAVING FIGURE: %s\n" % path)
+    figure.savefig(path, dpi=200)
 
     pyplot.close()

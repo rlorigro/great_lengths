@@ -1,14 +1,49 @@
+from modules.plot import plot_iterative_histogram, plot_ngx
 from modules.IterativeHistogram import IterativeHistogram
-from modules.plot import plot_iterative_histogram
-from pyfaidx import Faidx
+from collections import Counter
+from subprocess import run
 import argparse
 import sys
 import os
 
 
-def build_index(path):
-    indexer = Faidx(path)
+def write_report(quartiles, output_dir):
+    path = os.path.join(output_dir, "report.tsv")
+    sys.stderr.write("SAVING REPORT: %s\n" % path)
 
+    with open(path, 'w') as output_file:
+        line = "quartiles" + '\t' + '\t'.join(list(map(str, quartiles)))
+        output_file.write(line)
+
+
+def find_quartiles(length_frequencies, n_items):
+    n_visited = 0
+    i_quartile = 0
+    quartiles = [0.25, 0.5, 0.75]
+    quartile_values = list()
+
+    for length,frequency in length_frequencies:
+        # This instance of 'length' may have occured multiple times, as measured by 'frequency'
+        # Check if all the instances of this length would exceed any quartile
+        while float(n_visited + frequency)/float(n_items) > quartiles[i_quartile]:
+            quartile_values.append(length)
+            i_quartile += 1
+
+            if i_quartile == len(quartiles):
+                break
+
+        n_visited += frequency
+
+    print(quartile_values)
+
+    # Append the min and max
+    quartile_values = [length_frequencies[0][0]] + quartile_values + [length_frequencies[-1][0]]
+
+    return quartile_values
+
+
+# Use a system call to samtools faidx to build the index
+def build_index(path):
     index_path = path + ".fai"
     if os.path.exists(index_path):
         sys.stderr.write("Index exists\n")
@@ -16,32 +51,34 @@ def build_index(path):
             sys.stderr.write("WARNING: fasta/q index path is older than file itself, may be out of date: " + index_path + "\n")
     else:
         sys.stderr.write("No index found, indexing... ")
-        indexer = indexer.build_index()
+        arguments = ["samtools", "faidx", path]
+        run(arguments, check=True)
         sys.stderr.write("Done\n")
 
     sys.stderr.flush()
 
-    return indexer
+    return index_path
 
 
 def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins, use_auto_bounds):
-    filename_prefix = (os.path.basename(input_path)).split('.')[0]
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    indexer = build_index(input_path)
-    lengths = list()
-
+    index_path = build_index(input_path)
     if use_auto_bounds:
-        # For some godforsaken reason this library has no min/max length method for FASTA
-        sys.stderr.write("WARNING: using auto bounds can increase run time\n")
+        sys.stderr.write("WARNING: using auto bounds increases run time\n")
 
         histogram_min = sys.maxsize
         histogram_max = 0
 
-        for index in indexer:
-            if len(s) > histogram_max:
-                histogram_max = len(s)
-            if len(s) < histogram_min:
-                histogram_min = len(s)
+        with open(index_path) as file:
+            for line in file:
+                length = int(line.split('\t')[1])
+
+                if length > histogram_max:
+                    histogram_max = length
+                if length < histogram_min:
+                    histogram_min = length
 
         sys.stderr.write("Using automatically determined bounds for histogram: [%d,%d]\n"%(histogram_min, histogram_max))
 
@@ -50,13 +87,26 @@ def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins,
 
     histogram = IterativeHistogram(start=histogram_min, stop=histogram_max, n_bins=histogram_n_bins)
 
-    for sequence in file_parser:
-        print(sequence.name, len(sequence))
-        lengths.append(len(sequence))
-        histogram.update(len(sequence))
+    length_frequencies = Counter()
+    total_length = 0
+    n_items = 0
+    with open(index_path) as file:
+        for line in file:
+            print(length)
+            length = int(line.split('\t')[1])
+            length_frequencies[length] += 1
+            histogram.update(length)
+            total_length += length
+            n_items += 1
 
-    histogram_path_name = os.path.join(output_dir, filename_prefix + ".png")
-    plot_iterative_histogram(histogram, path=histogram_path_name)
+    length_frequencies = sorted(length_frequencies.items(), key=lambda x: x[0])
+
+    quartiles = find_quartiles(length_frequencies, n_items=n_items)
+
+    plot_iterative_histogram(histogram, output_dir=output_dir)
+    plot_ngx(length_frequencies, total_length=total_length, output_dir=output_dir)
+    write_report(quartiles=quartiles, output_dir=output_dir)
+
 
 
 def string_as_bool(s):
