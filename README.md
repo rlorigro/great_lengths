@@ -35,6 +35,7 @@ Length  Frequency
 12      9
 22      1
 76      12
+...     ...
 ```
 
 ## Usage
