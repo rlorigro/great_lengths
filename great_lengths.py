@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from modules.plot import plot_iterative_histogram, plot_ngx
 from modules.IterativeHistogram import IterativeHistogram
 from collections import Counter
