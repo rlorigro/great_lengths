@@ -135,7 +135,7 @@ def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins,
     # Plots
     if output_dir is not None:
         plot_iterative_histogram(histogram, output_dir=output_dir)
-        plot_ngx(length_frequencies, total_length=total_length, output_dir=output_dir)
+        plot_nx(length_frequencies, total_length=total_length, output_dir=output_dir)
 
     # Write report
     output_file = None
