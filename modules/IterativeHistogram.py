@@ -1,5 +1,6 @@
 import math
 import numpy
+import sys
 
 
 class IterativeHistogram:
@@ -36,7 +37,7 @@ class IterativeHistogram:
         if 0 <= bin_index <= (self.n_bins-1):
             self.histogram[bin_index] += 1
         else:
-            print("WARNING: value not within user-defined bins:", x, "\tBin index:", bin_index)
+            sys.stderr.write("WARNING: value not within user-defined bins: %d\tBin index: %d\n" % (x, bin_index))
 
         # print(x, bin_index)
         # print(self.edges)
