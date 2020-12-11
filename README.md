@@ -4,7 +4,13 @@ Very simple tool for generating read length distributions from fastq/fasta files
 ## Output
 A histogram of read lengths (with automatic or predefined bounds):
 
+![histogram](/images/histogram.svg)
+
+
 A Nx plot of read lengths:
+
+![Nx](/images/Nx.svg)
+
 
 A summary table with statistics:
 ```
