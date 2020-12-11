@@ -7,7 +7,6 @@ import sys
 import os
 
 
-
 def find_quartiles(length_frequencies, n_items):
     n_visited = 0
     i_quartile = 0
@@ -21,13 +20,13 @@ def find_quartiles(length_frequencies, n_items):
             quartile_values.append(length)
             i_quartile += 1
 
-            # terminate loop
+            # Terminate loop
             if i_quartile == len(quartiles):
                 break
 
         n_visited += frequency
 
-        # exit
+        # Exit
         if len(quartile_values) == len(quartiles):
             break
 
@@ -78,21 +77,23 @@ def build_index(path):
     return index_path
 
 
-def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins, use_auto_bounds):
+def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins, use_auto_bounds, unabridged):
 
-    # sanity check
+    # Sanity check the user or default bounds (terminate early)
     if histogram_max == histogram_min:
         exit("ERROR: cannot create histogram for read distribution containing only one length")
 
-    # ensure output dir if set
+    # Ensure output dir if set
     if output_dir is not None:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
     else:
         sys.stderr.write("No output directory specified, will print report to stdout and not produce plots")
 
-    # get index
+    # Get index
     index_path = build_index(input_path)
+
+    # Find bounds for histogram if user specified hist_auto_bounds
     if use_auto_bounds:
         sys.stderr.write("WARNING: using auto bounds increases run time\n")
         histogram_min = sys.maxsize
@@ -107,10 +108,13 @@ def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins,
                     histogram_min = length
         sys.stderr.write("Using automatically determined bounds for histogram: [%d,%d]\n"%(histogram_min, histogram_max))
 
+        # Sanity check the auto bounds
+        if histogram_max == histogram_min:
+            exit("ERROR: cannot create histogram for read distribution containing only one length")
 
     histogram = IterativeHistogram(start=histogram_min, stop=histogram_max, n_bins=histogram_n_bins)
-
     length_frequencies = Counter()
+
     total_length = 0
     n_items = 0
     with open(index_path) as file:
@@ -121,18 +125,19 @@ def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins,
             total_length += length
             n_items += 1
 
-    # get data
+    # Get data
     length_frequencies = sorted(length_frequencies.items(), key=lambda x: x[0])
     quartiles = find_quartiles(length_frequencies, n_items=n_items)
     ns = find_n25_n50_n75(length_frequencies, total_length)
 
-    # plots
+    # Plots
     if output_dir is not None:
         plot_iterative_histogram(histogram, output_dir=output_dir)
         plot_ngx(length_frequencies, total_length=total_length, output_dir=output_dir)
 
-    # write report
+    # Write report
     output_file = None
+    unabridged_output_file = None
     try:
         if output_dir is not None:
             path = os.path.join(output_dir, "report.tsv")
@@ -155,10 +160,24 @@ def main(input_path, output_dir, histogram_min, histogram_max, histogram_n_bins,
         print("N50\t{}".format(ns[1]), file=output_file)
         print("N75\t{}".format(ns[2]), file=output_file)
 
+        if unabridged:
+            if output_dir is not None and unabridged:
+                path = os.path.join(output_dir, "unabridged_distribution.tsv")
+                sys.stderr.write("SAVING UNABRIDGED DISTRIBUTION: %s\n" % path)
+                unabridged_output_file = open(path, 'w')
+            else:
+                unabridged_output_file = sys.stdout
+
+            print("Length\tFrequency", file=unabridged_output_file)
+            for length,frequency in length_frequencies:
+                print("{}\t{}".format(length,frequency), file=unabridged_output_file)
+
     finally:
         if output_dir is not None and output_file is not None:
             output_file.close()
 
+        if output_dir is not None and unabridged_output_file is not None:
+            unabridged_output_file.close()
 
 
 if __name__ == "__main__":
@@ -205,6 +224,13 @@ if __name__ == "__main__":
         action='store_true',
         help="Automatically determine the histogram min/max bounds from the min/max in the data"
     )
+    parser.add_argument(
+        "--unabridged","-u",
+        required=False,
+        default=False,
+        action='store_true',
+        help="Dump the full distribution of all observed lengths in tsv with columns: length,frequency"
+    )
 
     args = parser.parse_args()
 
@@ -214,5 +240,6 @@ if __name__ == "__main__":
         histogram_min=args.hist_min,
         histogram_max=args.hist_max,
         histogram_n_bins=args.hist_n_bins,
-        use_auto_bounds=args.hist_auto_bounds
+        use_auto_bounds=args.hist_auto_bounds,
+        unabridged=args.unabridged
     )
