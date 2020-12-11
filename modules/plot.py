@@ -39,8 +39,6 @@ def plot_nx(length_frequencies, total_length, output_dir):
 
     axes.plot(x_coords, y_coords, linewidth=0.6)
 
-    axes.legend(legend_names)
-
     axes.axvline(0.5, linestyle="--", alpha=0.3, linewidth=0.7, zorder=-1)
 
     axes.set_xlim([0, 1])
