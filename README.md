@@ -14,19 +14,19 @@ A Nx plot of read lengths:
 
 A summary table with statistics:
 ```
-file    simple.fastq
-total_reads     22
-total_bp        1042
-total_Gbp       0
-min     12
-max     76
-mean    47
-quartile_25     12
-quartile_50     76
-quartile_75     76
-N25     76
-N50     76
-N75     76
+file	GM24385_1_Guppy_4.2.2_prom.fastq
+total_reads	2900987
+total_bp	26945078155
+total_Gbp	26
+min	1
+max	503494
+mean	9288
+quartile_25	17
+quartile_50	932
+quartile_75	6555
+N25	21001
+N50	52031
+N75	88313
 ```
 
 An unabridged table of all observed lengths:
