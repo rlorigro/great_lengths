@@ -4,7 +4,7 @@ import sys
 import os
 
 
-def plot_ngx(length_frequencies, total_length, output_dir):
+def plot_nx(length_frequencies, total_length, output_dir):
 
     figure = pyplot.figure()
     axes = pyplot.axes()
@@ -45,11 +45,11 @@ def plot_ngx(length_frequencies, total_length, output_dir):
 
     axes.set_xlim([0, 1])
 
-    axes.set_title("NGx")
+    axes.set_title("Nx")
     axes.set_xlabel("Cumulative coverage (normalized to 1)")
     axes.set_ylabel("Length")
 
-    path = os.path.join(output_dir, "NGx.svg")
+    path = os.path.join(output_dir, "Nx.svg")
     sys.stderr.write("SAVING FIGURE: %s\n" % path)
     figure.savefig(path, dpi=200)
 
