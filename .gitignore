@@ -1,2 +1,4 @@
 venv/
 .idea/
+*.fai
+*__pycache__*
